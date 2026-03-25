@@ -1,0 +1,17 @@
+streamlit
+pymongo
+pandas
+numpy
+scikit-learn
+plotly
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+langchain-huggingface
+langchain-chroma
+chromadb
+sentence-transformers
+transformers
+accelerate
+torch
