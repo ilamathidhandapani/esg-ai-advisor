@@ -6,17 +6,20 @@ from pymongo import MongoClient
 import datetime
 import plotly.graph_objects as go
 import plotly.express as px
+from groq import Groq
 
 st.set_page_config(page_title="ESG AI Advisor", page_icon="🌿", layout="wide")
 
-# ── MongoDB ───────────────────────────────────────────────────
-MONGODB_URI = "mongodb+srv://ilamathidhandapani_db_user:Esg12345@cluster0.fsy0sir.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# ── API Keys ──────────────────────────────────────────────────
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+MONGODB_URI  = "mongodb+srv://ilamathidhandapani_db_user:Esg12345@cluster0.fsy0sir.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
+# ── MongoDB ───────────────────────────────────────────────────
 @st.cache_resource
 def get_db():
     try:
         client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-        db = client["esg_project"]
+        db     = client["esg_project"]
         db.list_collection_names()
         return db
     except:
@@ -26,19 +29,179 @@ def get_db():
 @st.cache_data
 def load_esg_data():
     try:
-        df = pd.read_csv("ESGData.csv")
+        df    = pd.read_csv("ESGData.csv")
         india = df[df["Country Name"] == "India"].copy()
         return india
     except Exception as e:
         st.error(f"Could not load ESGData.csv: {e}")
         return pd.DataFrame()
 
+# ── Build Knowledge Base ──────────────────────────────────────
+@st.cache_data
+def build_knowledge_base():
+    india = load_esg_data()
+    years = [str(y) for y in range(2000, 2021)]
+    docs  = []
+
+    if not india.empty:
+        for _, row in india.iterrows():
+            indicator  = row["Indicator Name"]
+            avail_data = {y: row[y] for y in years if y in row.index and pd.notna(row[y])}
+            if len(avail_data) < 5:
+                continue
+            values = list(avail_data.values())
+            yrs    = list(avail_data.keys())
+            latest = values[-1]
+            oldest = values[0]
+            change = latest - oldest
+            trend  = "increasing" if change > 0 else "decreasing"
+            text   = f"""ESG Indicator Report - India
+Indicator: {indicator}
+Time Period: {yrs[0]} to {yrs[-1]}
+Latest Value ({yrs[-1]}): {latest:.2f}
+Earliest Value ({yrs[0]}): {oldest:.2f}
+Trend: {trend} by {abs(change):.2f} over {len(yrs)} years
+Average annual change: {abs(change/len(yrs)):.3f} per year"""
+            docs.append({"text": text, "source": f"ESGData_{indicator[:30]}", "indicator": indicator})
+
+    sdg_docs = [
+        {"text": """SDG 7: Affordable and Clean Energy
+India: 95.24% electricity access but 75.31% from coal. Renewable only 15.34%.
+Actions: Install rooftop solar 500kW-2MW. Cost Rs 2.5-3 crore/MW. ROI 5-7 years.
+40% accelerated depreciation tax benefit. Join RE100. Purchase RECs.""",
+         "source": "SDG_Framework", "indicator": "SDG7"},
+
+        {"text": """SDG 13: Climate Action
+India CO2: 1.82 metric tons per capita, rising since 2000.
+India net zero target: 2070. 50% renewable by 2030 (Paris Agreement).
+Risk: CBAM taxes high-carbon exports to EU from 2026.
+Actions: Set SBTi targets, carbon offset programs, EV transition plan.""",
+         "source": "SDG_Framework", "indicator": "SDG13"},
+
+        {"text": """SDG 3: Good Health and Well-Being
+India PM2.5: 90.87 micrograms/m3 - 18x WHO safe limit of 5.
+Life expectancy: 69.42 years.
+Actions: HEPA air filtration reduces PM2.5 by 85%. Provide N95 masks.
+ESI health insurance for all workers. Annual lung function tests.
+Legal risk: Liable under Occupational Safety Health and Working Conditions Code 2020.""",
+         "source": "SDG_Framework", "indicator": "SDG3"},
+
+        {"text": """SDG 6: Clean Water and Sanitation
+Auto manufacturing uses 200-500 liters of water per vehicle.
+Actions: Zero Liquid Discharge (ZLD) system. Cost Rs 50-80 lakh.
+Recycles 95% of process water. Reduces freshwater intake by 70%.""",
+         "source": "SDG_Framework", "indicator": "SDG6"},
+
+        {"text": """SDG 8: Decent Work and Economic Growth
+India unemployment: 7.11%. Female labor participation: only 27.38%.
+EV transition risk: ICE engine workers may be displaced - reskilling essential.
+Actions: Skill development for battery assembly, gender pay equity, safety audits.""",
+         "source": "SDG_Framework", "indicator": "SDG8"},
+
+        {"text": """Auto Manufacturing ESG Crisis Chain - India
+Coal electricity 75.31% → CO2 rising 1.82 t/cap → PM2.5 at 90.87 ug/m3 (18x WHO)
+→ Water scarcity → Worker health crisis → Low life expectancy 69.42 years
+Solution: Solar energy → reduces CO2 → improves air → saves water → healthier workers.""",
+         "source": "Domain_Knowledge", "indicator": "AutoMfgChain"},
+
+        {"text": """Auto Manufacturing Immediate Actions - India
+Action 1 - Rooftop Solar: 500kW-2MW. Cost Rs 2.5-3 cr/MW. ROI 5-7 years.
+Action 2 - EV Transition: FAME III policy. PLI scheme Rs 25938 crore.
+Action 3 - Water Recycling: ZLD system Rs 50-80 lakh. Recycles 95% process water.
+Action 4 - Worker Health: HEPA filtration (85% PM2.5 reduction). ESI coverage.""",
+         "source": "Domain_Knowledge", "indicator": "AutoMfgActions"},
+
+        {"text": """India Government Policies for Sustainable Auto Sector
+1. FAME III: Rs 25938 crore EV manufacturing incentive. Target 30% EV by 2030.
+2. National Solar Mission: 500GW renewable by 2030. Net metering for rooftop solar.
+3. CCTS Carbon Market: Earn tradeable carbon credits for emission reductions.
+4. PLI Scheme: Production Linked Incentive for battery manufacturing.
+5. Labour Code 2020: ESI for workers earning under Rs 21000 per month.""",
+         "source": "Policy_Knowledge", "indicator": "IndiaPolicy"},
+
+        {"text": """ESG Risk Assessment - Indian Auto Manufacturing
+HIGH RISK: CO2 > 2.5 t/cap: EU CBAM risk from 2026.
+PM2.5 > 35 ug: Worker health liability, OSHA violations.
+Fossil fuel > 70%: Stranded asset risk.
+ESG Rating: High risk → lower rating → higher cost of capital.
+International buyers in EU and US require ESG compliance for procurement.""",
+         "source": "Domain_Knowledge", "indicator": "RiskFramework"},
+
+        {"text": """Worker Welfare Programs India Auto Manufacturing
+1. ESI Health Insurance: Mandatory for workers earning < Rs 21000/month.
+2. HEPA Air Filtration: Reduces PM2.5 by 85%. Cost Rs 5-10 lakh per unit.
+3. Annual Health Checks: Lung function tests, blood tests for all shift workers.
+4. Reskilling Programs: PMKVY scheme covers EV battery assembly training.
+5. Female Worker Inclusion: Set 30% hiring target.
+6. Mental Health Support: Partner with iCall or Vandrevala Foundation.""",
+         "source": "Social_Knowledge", "indicator": "WorkerWelfare"},
+
+        {"text": """Community Welfare Programs India Auto Manufacturing
+1. Local hiring preference: Reduces commute emissions, supports local economy.
+2. Skill development centers: Free ITI-level training for nearby village youth.
+3. Water sharing: ZLD treated water shared with local farmers in dry season.
+4. School support: Fund 1 government school per 500 factory workers.
+5. Health camps: Monthly free medical camps for workers and families.
+CSR mandate: Companies with net profit > Rs 5 crore must spend 2% on CSR.""",
+         "source": "Social_Knowledge", "indicator": "CommunityWelfare"},
+    ]
+
+    return docs + sdg_docs
+
+# ── RAG Retrieval ─────────────────────────────────────────────
+def retrieve_context(question, docs, top_k=4):
+    q_words = set(question.lower().split())
+    scores  = []
+    for doc in docs:
+        doc_words = set(doc["text"].lower().split())
+        score     = len(q_words & doc_words)
+        scores.append((score, doc))
+    scores.sort(key=lambda x: x[0], reverse=True)
+    top_docs = [d for _, d in scores[:top_k]]
+    context  = "\n\n".join([d["text"] for d in top_docs])
+    sources  = [d["source"] for d in top_docs]
+    return context, sources
+
+# ── Groq LLM ─────────────────────────────────────────────────
+def get_llm_answer(question, context):
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        prompt = f"""You are an expert ESG sustainability advisor for an auto manufacturing company in India.
+
+The company faces this interconnected crisis:
+- 75% electricity from coal → CO2 rising (1.82 t/cap) → PM2.5 at 90.87 ug/m3 (18x WHO limit)
+- Water scarcity → Worker health crisis (life expectancy 69.42 years)
+- CBAM carbon tax on EU exports starts 2026
+
+Answer questions about ALL THREE ESG pillars:
+- ENVIRONMENT: CO2, energy, water, air quality, solar, ZLD
+- SOCIAL: worker health, PM2.5 safety, welfare programs, community, gender inclusion
+- GOVERNANCE: policy, CBAM, FAME III, CCTS, ESG rating, compliance
+
+Use the retrieved context below to give specific, actionable advice with numbers.
+
+Retrieved Context:
+{context}
+
+Question: {question}
+
+Detailed Answer:"""
+
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"LLM Error: {e}. Please check your Groq API key in Streamlit secrets."
+
 # ── Pillar Detection ──────────────────────────────────────────
 def detect_pillar(text):
     t = text.lower()
     social_words = ['worker','health','social','pm2.5','labor','labour','community',
-                    'welfare','safety','employee','gender','female','reskill','injury',
-                    'medical','esi','wellbeing','shift','canteen']
+                    'welfare','safety','employee','gender','female','reskill','medical','esi']
     gov_words    = ['governance','policy','cbam','compliance','tax','regulation',
                     'audit','esg rating','fame','pli','carbon credit','ccts','reporting']
     score_s = sum(1 for w in social_words if w in t)
@@ -49,89 +212,6 @@ def detect_pillar(text):
 
 PILLAR_LABEL = {'E': 'ENVIRONMENT', 'S': 'SOCIAL', 'G': 'GOVERNANCE'}
 PILLAR_COLOR = {'E': 'green', 'S': 'blue', 'G': 'orange'}
-
-# ── Knowledge Base for AI Answers ────────────────────────────
-KNOWLEDGE_BASE = {
-    "solar energy": """Install rooftop solar (500kW-2MW). Cost Rs 2.5-3 crore/MW. ROI 5-7 years.
-Reduces coal dependency 30-40%. Qualifies for 40% accelerated depreciation tax benefit.
-Join RE100 initiative. Purchase Renewable Energy Certificates (RECs).
-India National Solar Mission targets 500GW renewable by 2030.""",
-
-    "co2 emissions": """India CO2: 1.82 metric tons per capita, rising since 2000.
-India net zero target: 2070. 50% renewable by 2030 (Paris Agreement).
-Risk: CBAM Carbon Border Adjustment Mechanism taxes high-carbon exports to EU from 2026.
-Actions: Set science-based emissions targets (SBTi), carbon offset programs, EV transition plan.""",
-
-    "pm2.5 worker health": """India PM2.5: 90.87 micrograms/m3 — 18x WHO safe limit of 5.
-Workers directly exposed to PM2.5 risk serious respiratory disease.
-Actions: HEPA air filtration reduces PM2.5 by 85%. Provide N95 masks.
-ESI health insurance for all workers. Annual lung function tests.
-Legal risk: Liable under Occupational Safety Health and Working Conditions Code 2020.""",
-
-    "water recycling": """Auto manufacturing uses 200-500 liters of water per vehicle manufactured.
-India faces rising industrial water stress.
-Actions: Zero Liquid Discharge (ZLD) system. Cost Rs 50-80 lakh.
-Recycles 95% of process water. Reduces freshwater intake by 70%.
-Rainwater harvesting mandatory in water-stressed regions.""",
-
-    "worker welfare programs": """Required programs for Indian auto manufacturing:
-1. ESI Health Insurance: Mandatory for workers earning < Rs 21000/month under Labour Code 2020.
-2. HEPA Air Filtration: Reduces PM2.5 by 85% in factory zones. Cost Rs 5-10 lakh per unit.
-3. Annual Health Checks: Lung function tests, blood tests for all shift workers.
-4. Reskilling Programs: PMKVY scheme covers cost of EV battery assembly training.
-5. Canteen and Rest Facilities: Statutory requirement under Factories Act.
-6. Female Worker Inclusion: India female labor only 27.38%. Set 30% hiring target.
-7. Mental Health Support: Partner with iCall or Vandrevala Foundation.""",
-
-    "ev transition": """FAME III: Rs 25938 crore EV manufacturing incentive. Target 30% EV by 2030.
-PLI Scheme: Production Linked Incentive for battery manufacturing.
-EV transition risk: ICE engine workers may be displaced — reskilling essential.
-Actions: Skill development for battery assembly, gender pay equity, safety audits.
-Opportunity: Green manufacturing jobs can absorb displaced ICE workers.""",
-
-    "cbam policy": """CBAM (Carbon Border Adjustment Mechanism) starts taxing high-carbon exports to EU from 2026.
-Indian auto manufacturers exporting to EU must reduce carbon footprint urgently.
-Actions: Get carbon footprint certified, reduce Scope 1 and 2 emissions, switch to renewable energy.
-Register under India CCTS (Carbon Credit Trading Scheme) to earn carbon credits.""",
-
-    "esg rating": """ESG Rating impact: High risk → lower ESG rating → higher cost of capital.
-International buyers in EU and US now require ESG compliance for procurement.
-HIGH RISK indicators: CO2 > 2.5 t/cap, PM2.5 > 35 ug, Fossil fuel > 70%, Corruption < 0.
-To improve rating: Solar energy, ZLD water, worker health programs, governance transparency.""",
-
-    "community welfare": """Community initiatives for Indian auto manufacturing:
-1. Local hiring preference: Reduces commute emissions, supports local economy.
-2. Skill development centers: Free ITI-level training for nearby village youth.
-3. Water sharing: ZLD treated water shared with local farmers in dry season.
-4. School support: Fund 1 government school per 500 factory workers (CSR mandate).
-5. Health camps: Monthly free medical camps for workers and their families.
-CSR mandate: Companies with net profit > Rs 5 crore must spend 2% on CSR under Companies Act 2013.""",
-
-    "carbon credits ccts": """India CCTS Carbon Credit Trading Scheme is now operational.
-Auto manufacturers earn Rs 400-600/tonne CO2 reduced. Register on BEE portal.
-Actions: Reduce emissions, earn tradeable carbon credits, sell on carbon market.
-Also eligible for: Renewable Energy Certificates (RECs) from solar installations.""",
-
-    "default": """For Indian auto manufacturing, key ESG actions are:
-ENVIRONMENT: Install rooftop solar (Rs 2.5-3 cr/MW), implement ZLD water recycling (Rs 50-80 lakh), target net zero by 2070.
-SOCIAL: HEPA filtration for PM2.5 (85% reduction), ESI health insurance, reskill workers for EV transition.
-GOVERNANCE: Register for CCTS carbon credits, comply with CBAM before 2026, improve ESG rating for international buyers.
-All actions qualify for government incentives under FAME III, PLI scheme, and National Solar Mission."""
-}
-
-def get_ai_answer(question):
-    q = question.lower()
-    best_match = "default"
-    best_score = 0
-    for key in KNOWLEDGE_BASE:
-        keywords = key.split()
-        score = sum(1 for kw in keywords if kw in q)
-        if score > best_score:
-            best_score = score
-            best_match = key
-    answer = KNOWLEDGE_BASE[best_match]
-    pillar = detect_pillar(question)
-    return answer, pillar
 
 # ── Session State ─────────────────────────────────────────────
 for key in ["chat", "feedback"]:
@@ -159,17 +239,22 @@ with st.sidebar:
         st.success("✅ MongoDB Connected")
     else:
         st.warning("⚠️ MongoDB not connected")
+    st.divider()
+    st.markdown("### 🤖 AI Pipeline")
+    st.info("RAG: ESG Docs → Retrieve → Groq LLaMA3 → Answer")
 
 # ── Main ──────────────────────────────────────────────────────
 st.title("🌿 ESG Decision Support System")
-st.markdown("**AI Advisor | MongoDB | Auto Manufacturing India**")
+st.markdown("**RAG Pipeline | Groq LLaMA3 | MongoDB | Auto Manufacturing India**")
+
+all_docs = build_knowledge_base()
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 AI Chat", "📈 Forecast", "📊 Dashboard", "📝 Feedback", "📡 Live Feed"])
 
 # ── TAB 1: AI CHAT ────────────────────────────────────────────
 with tab1:
     st.markdown("### Ask the ESG AI Advisor")
-    st.info("Ask about Environment, Social, or Governance — the AI detects the pillar automatically")
+    st.info("RAG Pipeline: Question → Retrieve from ESG Knowledge Base → Groq LLaMA3 → Answer")
 
     suggestions = [
         "What welfare programs should we have for workers?",
@@ -185,15 +270,19 @@ with tab1:
         with cols[i % 3]:
             if st.button(s, key=f"q{i}", use_container_width=True):
                 st.session_state.chat.append({"role": "user", "content": s})
-                answer, pillar = get_ai_answer(s)
+                with st.spinner("🔍 Retrieving → 🤖 Groq LLaMA3 generating..."):
+                    context, sources = retrieve_context(s, all_docs)
+                    answer           = get_llm_answer(s, context)
+                pillar = detect_pillar(s)
                 st.session_state.chat.append({
-                    "role": "ai", "content": answer, "pillar": pillar
+                    "role": "ai", "content": answer,
+                    "pillar": pillar, "sources": sources
                 })
                 db = get_db()
                 if db is not None:
                     db.chat_history.insert_one({
                         "question": s, "answer": answer, "pillar": pillar,
-                        "timestamp": datetime.datetime.utcnow()
+                        "sources": sources, "timestamp": datetime.datetime.utcnow()
                     })
                 st.rerun()
 
@@ -209,19 +298,27 @@ with tab1:
                 color  = PILLAR_COLOR[pillar]
                 st.markdown(f":{color}[**{PILLAR_LABEL[pillar]}**]")
                 st.write(msg["content"])
+                if "sources" in msg:
+                    with st.expander("📚 Sources Retrieved by RAG"):
+                        for src in set(msg["sources"]):
+                            st.caption(f"• {src}")
 
     user_q = st.chat_input("Ask anything about ESG — environment, social, or governance...")
     if user_q:
         st.session_state.chat.append({"role": "user", "content": user_q})
-        answer, pillar = get_ai_answer(user_q)
+        with st.spinner("🔍 Retrieving → 🤖 Generating..."):
+            context, sources = retrieve_context(user_q, all_docs)
+            answer           = get_llm_answer(user_q, context)
+        pillar = detect_pillar(user_q)
         st.session_state.chat.append({
-            "role": "ai", "content": answer, "pillar": pillar
+            "role": "ai", "content": answer,
+            "pillar": pillar, "sources": sources
         })
         db = get_db()
         if db is not None:
             db.chat_history.insert_one({
                 "question": user_q, "answer": answer, "pillar": pillar,
-                "timestamp": datetime.datetime.utcnow()
+                "sources": sources, "timestamp": datetime.datetime.utcnow()
             })
         st.rerun()
 
@@ -285,13 +382,14 @@ with tab2:
                 if db is not None:
                     db.forecasts.insert_one({
                         "indicator": chosen, "target_year": year,
-                        "predicted": pred, "timestamp": datetime.datetime.utcnow()
+                        "predicted": float(pred),
+                        "timestamp": datetime.datetime.utcnow()
                     })
                     st.success("💾 Forecast saved to MongoDB!")
             else:
                 st.warning("Not enough data for this indicator.")
     else:
-        st.error("ESGData.csv not found. Please upload it to the GitHub repo.")
+        st.error("ESGData.csv not found.")
 
 # ── TAB 3: DASHBOARD ──────────────────────────────────────────
 with tab3:
@@ -378,14 +476,14 @@ with tab4:
         fb_df   = pd.DataFrame(fb_list)
         if "accuracy" in fb_df.columns:
             c1, c2, c3 = st.columns(3)
-            c1.metric("Avg Accuracy",   f"{fb_df['accuracy'].mean():.1f}/5")
-            c2.metric("Avg Usefulness", f"{fb_df['usefulness'].mean():.1f}/5")
+            c1.metric("Avg Accuracy",    f"{fb_df['accuracy'].mean():.1f}/5")
+            c2.metric("Avg Usefulness",  f"{fb_df['usefulness'].mean():.1f}/5")
             c3.metric("Total Feedbacks", len(fb_df))
 
 # ── TAB 5: LIVE FEED ──────────────────────────────────────────
 with tab5:
     st.markdown("### 📡 Live ESG Feed Data")
-    st.info("Save news, alerts, sensor data, policy updates → stored in MongoDB")
+    st.info("Save news, alerts, sensor data, policy updates → stored in MongoDB → queryable by AI")
 
     col_a, col_b = st.columns([2, 1])
     with col_a:
@@ -438,12 +536,15 @@ with tab5:
         st.markdown("#### 🤖 Ask AI About Feed Data")
         feed_q = st.text_input("Ask a question about your stored feeds:")
         if feed_q:
-            answer, pillar = get_ai_answer(feed_q)
+            with st.spinner("🔍 Retrieving → 🤖 Generating..."):
+                context, sources = retrieve_context(feed_q, all_docs)
+                answer           = get_llm_answer(feed_q, context)
             st.success(answer)
             if db is not None:
                 db.chat_history.insert_one({
                     "question": feed_q, "answer": answer,
-                    "pillar": pillar, "source": "feed_tab",
+                    "pillar": detect_pillar(feed_q),
+                    "source": "feed_tab",
                     "timestamp": datetime.datetime.utcnow()
                 })
     else:
