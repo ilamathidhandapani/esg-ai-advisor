@@ -11,7 +11,7 @@ from groq import Groq
 st.set_page_config(page_title="ESG AI Advisor", page_icon="🌿", layout="wide")
 
 # ── API Keys ──────────────────────────────────────────────────
-GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+GROQ_API_KEY = st.secrets["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"]
 MONGODB_URI  = "mongodb+srv://ilamathidhandapani_db_user:Esg12345@cluster0.fsy0sir.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # ── MongoDB ───────────────────────────────────────────────────
@@ -188,7 +188,7 @@ Question: {question}
 Detailed Answer:"""
 
         response = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model=llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
             temperature=0.3
