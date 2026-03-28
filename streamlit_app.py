@@ -165,7 +165,7 @@ def retrieve_context(question, docs, top_k=4):
 # ── Groq LLM ─────────────────────────────────────────────────
 def get_llm_answer(question, context):
     try:
-        client = Groq(api_key=GROQ_API_KEY)   # ✅ FIXED
+        client = Groq(api_key=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)   # ✅ FIXED
         prompt = f"""You are an expert ESG sustainability advisor for an auto manufacturing company in India.
 
 The company faces this interconnected crisis:
