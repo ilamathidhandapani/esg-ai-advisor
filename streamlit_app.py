@@ -165,7 +165,7 @@ def retrieve_context(question, docs, top_k=4):
 # ── Groq LLM ─────────────────────────────────────────────────
 def get_llm_answer(question, context):
     try:
-        client = Groq(api_key=GROQ_API_KEY)
+        client = Groq(api_keygsk_tlZhXO0lBGM3ZZOeOT2vWGdyb3FY2REAVMe66CR4QbgfydR9IgoI)
         prompt = f"""You are an expert ESG sustainability advisor for an auto manufacturing company in India.
 
 The company faces this interconnected crisis:
@@ -188,7 +188,7 @@ Question: {question}
 Detailed Answer:"""
 
         response = client.chat.completions.create(
-            model=llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
             temperature=0.3
