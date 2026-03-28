@@ -11,7 +11,7 @@ from groq import Groq
 st.set_page_config(page_title="ESG AI Advisor", page_icon="🌿", layout="wide")
 
 # ── API Keys ──────────────────────────────────────────────────
-GROQ_API_KEY = st.secrets["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"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]   # ✅ FIXED
 MONGODB_URI  = "mongodb+srv://ilamathidhandapani_db_user:Esg12345@cluster0.fsy0sir.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # ── MongoDB ───────────────────────────────────────────────────
@@ -165,7 +165,7 @@ def retrieve_context(question, docs, top_k=4):
 # ── Groq LLM ─────────────────────────────────────────────────
 def get_llm_answer(question, context):
     try:
-        client = Groq(api_keygsk_tlZhXO0lBGM3ZZOeOT2vWGdyb3FY2REAVMe66CR4QbgfydR9IgoI)
+        client = Groq(api_key=GROQ_API_KEY)   # ✅ FIXED
         prompt = f"""You are an expert ESG sustainability advisor for an auto manufacturing company in India.
 
 The company faces this interconnected crisis:
@@ -188,7 +188,7 @@ Question: {question}
 Detailed Answer:"""
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="llama-3.1-8b-instant",   # ✅ Active model
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
             temperature=0.3
