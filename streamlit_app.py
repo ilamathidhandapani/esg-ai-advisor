@@ -10,6 +10,286 @@ from groq import Groq
 
 st.set_page_config(page_title="ESG AI Advisor", page_icon="🌿", layout="wide")
 
+# ── Custom CSS ────────────────────────────────────────────────
+st.markdown("""
+<style>
+/* ── Global ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+.main {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+}
+
+/* ── Hero Header ── */
+.hero-header {
+    background: linear-gradient(135deg, #1a3a6b 0%, #0d47a1 50%, #1565c0 100%);
+    padding: 2.5rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(13, 71, 161, 0.3);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.85);
+    margin-top: 0.5rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+}
+
+.hero-badges {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+}
+
+/* ── Metric Cards ── */
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.2rem;
+    box-shadow: 0 4px 16px rgba(13, 71, 161, 0.1);
+    border-left: 4px solid #0d47a1;
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(13, 71, 161, 0.2);
+}
+
+.metric-card.danger { border-left-color: #d32f2f; }
+.metric-card.warning { border-left-color: #f57c00; }
+.metric-card.success { border-left-color: #388e3c; }
+
+.metric-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #546e7a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a237e;
+    margin: 0.2rem 0;
+}
+
+.metric-delta {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #d32f2f;
+}
+
+/* ── Chat Bubbles ── */
+.chat-user {
+    background: linear-gradient(135deg, #0d47a1, #1565c0);
+    color: white;
+    padding: 1rem 1.2rem;
+    border-radius: 18px 18px 4px 18px;
+    margin: 0.5rem 0;
+    max-width: 80%;
+    margin-left: auto;
+    box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.chat-ai {
+    background: white;
+    color: #1a237e;
+    padding: 1rem 1.2rem;
+    border-radius: 18px 18px 18px 4px;
+    margin: 0.5rem 0;
+    max-width: 85%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-left: 3px solid #0d47a1;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.pillar-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.pillar-E { background: #e8f5e9; color: #2e7d32; }
+.pillar-S { background: #e3f2fd; color: #1565c0; }
+.pillar-G { background: #fff3e0; color: #e65100; }
+
+/* ── Section Headers ── */
+.section-header {
+    background: linear-gradient(135deg, #1a3a6b, #0d47a1);
+    color: white;
+    padding: 0.8rem 1.2rem;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Suggestion Buttons ── */
+.stButton > button {
+    background: white !important;
+    color: #0d47a1 !important;
+    border: 2px solid #0d47a1 !important;
+    border-radius: 10px !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+    transition: all 0.2s ease !important;
+    padding: 0.6rem 1rem !important;
+}
+
+.stButton > button:hover {
+    background: #0d47a1 !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3) !important;
+}
+
+/* ── Info Box ── */
+.info-box {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border: 1px solid #90caf9;
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    color: #0d47a1;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Feed Cards ── */
+.feed-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid #0d47a1;
+    transition: transform 0.2s ease;
+}
+
+.feed-card:hover {
+    transform: translateX(4px);
+}
+
+/* ── Sidebar ── */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #1a3a6b 0%, #0d47a1 100%) !important;
+}
+
+section[data-testid="stSidebar"] * {
+    color: white !important;
+}
+
+section[data-testid="stSidebar"] .stMetric {
+    background: rgba(255,255,255,0.1) !important;
+    border-radius: 10px !important;
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+    background: white;
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    gap: 4px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    color: #546e7a !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #0d47a1, #1565c0) !important;
+    color: white !important;
+}
+
+/* ── Loading Animation ── */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.loading-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #0d47a1 25%, #42a5f5 50%, #0d47a1 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #0d47a1; border-radius: 3px; }
+</style>
+""", unsafe_allow_html=True)
+
 # ── API Keys ──────────────────────────────────────────────────
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 MONGODB_URI  = "mongodb+srv://ilamathidhandapani_db_user:Esg12345@cluster0.fsy0sir.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -33,7 +313,6 @@ def load_esg_data():
         india = df[df["Country Name"] == "India"].copy()
         return india
     except Exception as e:
-        st.error(f"Could not load ESGData.csv: {e}")
         return pd.DataFrame()
 
 # ── Build Knowledge Base ──────────────────────────────────────
@@ -195,7 +474,7 @@ Detailed Answer:"""
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"LLM Error: {e}. Please check your Groq API key in Streamlit secrets."
+        return f"⚠️ LLM Error: {e}"
 
 # ── Pillar Detection ──────────────────────────────────────────
 def detect_pillar(text):
@@ -210,8 +489,8 @@ def detect_pillar(text):
     if score_s > 0:       return 'S'
     return 'E'
 
-PILLAR_LABEL = {'E': 'ENVIRONMENT', 'S': 'SOCIAL', 'G': 'GOVERNANCE'}
-PILLAR_COLOR = {'E': 'green', 'S': 'blue', 'G': 'orange'}
+PILLAR_LABEL = {'E': '🌍 ENVIRONMENT', 'S': '👥 SOCIAL', 'G': '⚖️ GOVERNANCE'}
+PILLAR_CLASS = {'E': 'pillar-E', 'S': 'pillar-S', 'G': 'pillar-G'}
 
 # ── Session State ─────────────────────────────────────────────
 for key in ["chat", "feedback"]:
@@ -220,41 +499,69 @@ for key in ["chat", "feedback"]:
 
 # ── Sidebar ───────────────────────────────────────────────────
 with st.sidebar:
-    st.title("🌿 ESG AI Advisor")
+    st.markdown("## 🌿 ESG AI Advisor")
     st.markdown("**Auto Manufacturing | India**")
-    st.divider()
+    st.markdown("---")
     st.markdown("### 🔴 Crisis Metrics")
     st.metric("CO2 Emissions",   "1.82 t/cap",  "↑ Rising")
     st.metric("PM2.5 Level",     "90.87 µg/m³", "18x WHO limit")
     st.metric("Coal Dependency", "75.31%",       "↓ Must reduce")
     st.metric("Life Expectancy", "69.42 yrs",    "↓ Below avg")
-    st.divider()
+    st.markdown("---")
     db = get_db()
     if db is not None:
         st.markdown("### 📊 MongoDB Stats")
-        st.metric("Questions Asked", db.chat_history.count_documents({}))
-        st.metric("Feedbacks",       db.feedback.count_documents({}))
-        st.metric("Forecasts Run",   db.forecasts.count_documents({}))
-        st.metric("Feed Records",    db.esg_feeds.count_documents({}))
+        st.metric("💬 Questions", db.chat_history.count_documents({}))
+        st.metric("📝 Feedbacks", db.feedback.count_documents({}))
+        st.metric("📈 Forecasts", db.forecasts.count_documents({}))
+        st.metric("📡 Feeds",     db.esg_feeds.count_documents({}))
         st.success("✅ MongoDB Connected")
     else:
         st.warning("⚠️ MongoDB not connected")
-    st.divider()
+    st.markdown("---")
     st.markdown("### 🤖 AI Pipeline")
-    st.info("RAG: ESG Docs → Retrieve → Groq LLaMA3 → Answer")
+    st.markdown("""
+    ```
+    Question
+       ↓
+    RAG Retrieve
+       ↓
+    Groq LLaMA3
+       ↓
+    Answer + MongoDB
+    ```
+    """)
 
-# ── Main ──────────────────────────────────────────────────────
-st.title("🌿 ESG Decision Support System")
-st.markdown("**RAG Pipeline | Groq LLaMA3 | MongoDB | Auto Manufacturing India**")
+# ── Hero Header ───────────────────────────────────────────────
+st.markdown("""
+<div class="hero-header">
+    <div class="hero-title">🌿 ESG Decision Support System</div>
+    <div class="hero-subtitle">AI-Powered Sustainability Advisor for Indian Auto Manufacturing</div>
+    <div class="hero-badges">
+        <span class="badge">🤖 Groq LLaMA3</span>
+        <span class="badge">📚 RAG Pipeline</span>
+        <span class="badge">🍃 MongoDB Atlas</span>
+        <span class="badge">🌍 ESG Analytics</span>
+        <span class="badge">🏭 Auto Manufacturing</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 all_docs = build_knowledge_base()
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 AI Chat", "📈 Forecast", "📊 Dashboard", "📝 Feedback", "📡 Live Feed"])
+# ── Tabs ──────────────────────────────────────────────────────
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "💬 AI Chat",
+    "📈 Forecast",
+    "📊 Dashboard",
+    "📝 Feedback",
+    "📡 Live Feed"
+])
 
 # ── TAB 1: AI CHAT ────────────────────────────────────────────
 with tab1:
-    st.markdown("### Ask the ESG AI Advisor")
-    st.info("RAG Pipeline: Question → Retrieve from ESG Knowledge Base → Groq LLaMA3 → Answer")
+    st.markdown('<div class="section-header">💬 Ask the ESG AI Advisor</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">🔍 RAG Pipeline: Question → Retrieve ESG Knowledge → Groq LLaMA3 → Detailed Answer</div>', unsafe_allow_html=True)
 
     suggestions = [
         "What welfare programs should we have for workers?",
@@ -270,7 +577,8 @@ with tab1:
         with cols[i % 3]:
             if st.button(s, key=f"q{i}", use_container_width=True):
                 st.session_state.chat.append({"role": "user", "content": s})
-                with st.spinner("🔍 Retrieving → 🤖 Groq LLaMA3 generating..."):
+                with st.spinner("🔍 Retrieving ESG knowledge → 🤖 Generating answer..."):
+                    st.markdown('<div class="loading-bar"></div>', unsafe_allow_html=True)
                     context, sources = retrieve_context(s, all_docs)
                     answer           = get_llm_answer(s, context)
                 pillar = detect_pillar(s)
@@ -286,22 +594,25 @@ with tab1:
                     })
                 st.rerun()
 
-    st.divider()
+    st.markdown("---")
 
+    # Chat messages
     for msg in st.session_state.chat:
         if msg["role"] == "user":
-            with st.chat_message("user"):
-                st.write(msg["content"])
+            st.markdown(f'<div class="chat-user">👤 {msg["content"]}</div>', unsafe_allow_html=True)
         else:
-            with st.chat_message("assistant"):
-                pillar = msg.get("pillar", "E")
-                color  = PILLAR_COLOR[pillar]
-                st.markdown(f":{color}[**{PILLAR_LABEL[pillar]}**]")
-                st.write(msg["content"])
-                if "sources" in msg:
-                    with st.expander("📚 Sources Retrieved by RAG"):
-                        for src in set(msg["sources"]):
-                            st.caption(f"• {src}")
+            pillar  = msg.get("pillar", "E")
+            pclass  = PILLAR_CLASS[pillar]
+            plabel  = PILLAR_LABEL[pillar]
+            sources = msg.get("sources", [])
+            src_str = " • ".join(set(sources)) if sources else ""
+            st.markdown(f"""
+            <div class="chat-ai">
+                <span class="pillar-badge {pclass}">{plabel}</span><br>
+                🤖 {msg["content"]}
+                <br><small style="color:#90a4ae; margin-top:8px; display:block;">📚 Sources: {src_str}</small>
+            </div>
+            """, unsafe_allow_html=True)
 
     user_q = st.chat_input("Ask anything about ESG — environment, social, or governance...")
     if user_q:
@@ -324,7 +635,7 @@ with tab1:
 
 # ── TAB 2: FORECAST ───────────────────────────────────────────
 with tab2:
-    st.markdown("### 📈 ESG Indicator Forecast")
+    st.markdown('<div class="section-header">📈 ESG Indicator Forecast</div>', unsafe_allow_html=True)
     india = load_esg_data()
 
     if not india.empty:
@@ -360,22 +671,30 @@ with tab2:
                 fig.add_trace(go.Scatter(
                     x=[a[0] for a in avail], y=[a[1] for a in avail],
                     mode="lines+markers", name="Historical",
-                    line=dict(color="blue", width=2)
+                    line=dict(color="#0d47a1", width=3),
+                    marker=dict(size=6, color="#0d47a1")
                 ))
                 fig.add_trace(go.Scatter(
                     x=forecast_yrs, y=forecast_vals.flatten(),
                     mode="lines", name="Forecast",
-                    line=dict(color="red", width=2, dash="dash")
+                    line=dict(color="#f57c00", width=3, dash="dash")
                 ))
                 fig.add_trace(go.Scatter(
                     x=forecast_yrs + forecast_yrs[::-1],
                     y=list(forecast_vals.flatten() + 1.96*std) +
                       list(forecast_vals.flatten() - 1.96*std)[::-1],
-                    fill="toself", fillcolor="rgba(255,0,0,0.1)",
+                    fill="toself", fillcolor="rgba(245,124,0,0.1)",
                     line=dict(color="rgba(255,255,255,0)"), name="95% CI"
                 ))
-                fig.update_layout(title=chosen, xaxis_title="Year",
-                                  yaxis_title="Value", height=400)
+                fig.update_layout(
+                    title=dict(text=chosen, font=dict(size=14, color="#1a237e")),
+                    xaxis_title="Year", yaxis_title="Value",
+                    height=420,
+                    plot_bgcolor="white",
+                    paper_bgcolor="white",
+                    font=dict(family="Inter"),
+                    legend=dict(bgcolor="rgba(255,255,255,0.8)", bordercolor="#e0e0e0", borderwidth=1)
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
                 db = get_db()
@@ -393,7 +712,34 @@ with tab2:
 
 # ── TAB 3: DASHBOARD ──────────────────────────────────────────
 with tab3:
-    st.markdown("### 📊 ESG Crisis Dashboard — India Auto Manufacturing")
+    st.markdown('<div class="section-header">📊 ESG Crisis Dashboard — India Auto Manufacturing</div>', unsafe_allow_html=True)
+
+    # Metric Cards
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown("""<div class="metric-card danger">
+            <div class="metric-label">CO2 Emissions</div>
+            <div class="metric-value">1.82</div>
+            <div class="metric-delta">↑ t/cap — Rising</div>
+        </div>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown("""<div class="metric-card danger">
+            <div class="metric-label">PM2.5 Level</div>
+            <div class="metric-value">90.87</div>
+            <div class="metric-delta">↑ µg/m³ — 18x WHO</div>
+        </div>""", unsafe_allow_html=True)
+    with col3:
+        st.markdown("""<div class="metric-card warning">
+            <div class="metric-label">Coal Dependency</div>
+            <div class="metric-value">75.31%</div>
+            <div class="metric-delta">↓ Must Reduce</div>
+        </div>""", unsafe_allow_html=True)
+    with col4:
+        st.markdown("""<div class="metric-card warning">
+            <div class="metric-label">Life Expectancy</div>
+            <div class="metric-value">69.42</div>
+            <div class="metric-delta">↓ yrs — Below Avg</div>
+        </div>""", unsafe_allow_html=True)
 
     crisis_data = {
         "Indicator": ["CO2 (t/cap)", "PM2.5 (µg/m³)", "Coal %", "Renewable %", "Life Expectancy", "Female Labor %"],
@@ -408,7 +754,11 @@ with tab3:
     with col1:
         fig = px.bar(df_crisis, x="Indicator", y=["Current", "Target"],
                      barmode="group", title="Current vs Target ESG Values",
-                     color_discrete_map={"Current": "#ef4444", "Target": "#22c55e"})
+                     color_discrete_map={"Current": "#d32f2f", "Target": "#388e3c"})
+        fig.update_layout(
+            plot_bgcolor="white", paper_bgcolor="white",
+            font=dict(family="Inter"), height=380
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
@@ -420,39 +770,44 @@ with tab3:
         fig2 = px.scatter(pd.DataFrame(action_data),
                           x="Cost (Rs Lakh)", y="Impact Score",
                           text="Action", title="Action: Cost vs Impact",
-                          color="Impact Score", color_continuous_scale="RdYlGn")
+                          color="Impact Score", color_continuous_scale="Blues",
+                          size="Impact Score", size_max=30)
         fig2.update_traces(textposition="top center")
+        fig2.update_layout(
+            plot_bgcolor="white", paper_bgcolor="white",
+            font=dict(family="Inter"), height=380
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     db = get_db()
     if db is not None and db.chat_history.count_documents({}) > 0:
-        st.markdown("### 💬 Recent Questions from MongoDB")
+        st.markdown('<div class="section-header">💬 Recent Questions from MongoDB</div>', unsafe_allow_html=True)
         recent = list(db.chat_history.find().sort("timestamp", -1).limit(5))
         for r in recent:
             pillar = r.get("pillar", "E")
-            with st.expander(f"[{PILLAR_LABEL.get(pillar,'ESG')}] {str(r.get('question',''))[:80]}"):
+            with st.expander(f"{PILLAR_LABEL.get(pillar,'ESG')} — {str(r.get('question',''))[:80]}"):
                 st.write(f"**Answer:** {r.get('answer','')}")
-                st.caption(f"Time: {r.get('timestamp','')}")
+                st.caption(f"🕐 {r.get('timestamp','')}")
 
 # ── TAB 4: FEEDBACK ───────────────────────────────────────────
 with tab4:
-    st.markdown("### 📝 Human Expert Feedback")
-    st.info("Your feedback is saved to MongoDB")
+    st.markdown('<div class="section-header">📝 Human Expert Feedback</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">💡 Your feedback is saved to MongoDB and helps improve the AI system</div>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        acc    = st.slider("Accuracy (1-5):", 1, 5, 3)
-        use    = st.slider("Usefulness (1-5):", 1, 5, 3)
-        pillar = st.selectbox("ESG Pillar:", ["Social", "Environment", "Governance"])
+        acc    = st.slider("⭐ Accuracy (1-5):", 1, 5, 3)
+        use    = st.slider("💡 Usefulness (1-5):", 1, 5, 3)
+        pillar = st.selectbox("🏷️ ESG Pillar:", ["Social", "Environment", "Governance"])
     with col2:
-        agr    = st.radio("Do you agree with the answer?", ["Yes", "Partially", "No"])
-        domain = st.selectbox("Your domain:", ["Manufacturing", "HR / Social", "Environment",
-                                               "Legal / Compliance", "Finance", "Research"])
+        agr    = st.radio("✅ Do you agree with the answer?", ["Yes", "Partially", "No"])
+        domain = st.selectbox("🏢 Your domain:", ["Manufacturing", "HR / Social", "Environment",
+                                                   "Legal / Compliance", "Finance", "Research"])
 
-    ctx = st.text_area("What did the AI miss? (add expert context):")
-    alt = st.text_area("Suggest a better action or answer:")
+    ctx = st.text_area("❓ What did the AI miss? (add expert context):")
+    alt = st.text_area("💭 Suggest a better action or answer:")
 
-    if st.button("Submit Feedback", type="primary"):
+    if st.button("📤 Submit Feedback", type="primary"):
         entry = {
             "accuracy": acc, "usefulness": use,
             "agreement": agr, "domain": domain,
@@ -470,20 +825,20 @@ with tab4:
 
     db = get_db()
     if db is not None and db.feedback.count_documents({}) > 0:
-        st.divider()
-        st.markdown("### 📊 Feedback Statistics")
+        st.markdown("---")
+        st.markdown('<div class="section-header">📊 Feedback Statistics</div>', unsafe_allow_html=True)
         fb_list = list(db.feedback.find())
         fb_df   = pd.DataFrame(fb_list)
         if "accuracy" in fb_df.columns:
             c1, c2, c3 = st.columns(3)
-            c1.metric("Avg Accuracy",    f"{fb_df['accuracy'].mean():.1f}/5")
-            c2.metric("Avg Usefulness",  f"{fb_df['usefulness'].mean():.1f}/5")
-            c3.metric("Total Feedbacks", len(fb_df))
+            c1.metric("⭐ Avg Accuracy",   f"{fb_df['accuracy'].mean():.1f}/5")
+            c2.metric("💡 Avg Usefulness", f"{fb_df['usefulness'].mean():.1f}/5")
+            c3.metric("📝 Total Feedbacks", len(fb_df))
 
 # ── TAB 5: LIVE FEED ──────────────────────────────────────────
 with tab5:
-    st.markdown("### 📡 Live ESG Feed Data")
-    st.info("Save news, alerts, sensor data, policy updates → stored in MongoDB → queryable by AI")
+    st.markdown('<div class="section-header">📡 Live ESG Feed Data</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">📥 Save news, alerts, sensor data, policy updates → stored in MongoDB → queryable by AI</div>', unsafe_allow_html=True)
 
     col_a, col_b = st.columns([2, 1])
     with col_a:
@@ -509,14 +864,14 @@ with tab5:
                 else:
                     st.error("❌ MongoDB not connected")
             else:
-                st.warning("Please fill Title and Content")
+                st.warning("⚠️ Please fill Title and Content")
 
     with col_b:
-        st.markdown("#### 🔍 Filter")
+        st.markdown("#### 🔍 Filter Feeds")
         filter_type  = st.selectbox("Type:", ["all","news","alert","policy","sensor","report","user_input"])
         filter_limit = st.slider("Show last N:", 5, 50, 10)
 
-    st.divider()
+    st.markdown("---")
     st.markdown("#### 📋 Stored Feeds")
     db = get_db()
     if db is not None:
@@ -528,18 +883,18 @@ with tab5:
             with st.expander(f"{icon} [{f['feed_type'].upper()}] {f['title']} — {f['timestamp'].strftime('%Y-%m-%d %H:%M')}"):
                 st.write(f["content"])
                 cols = st.columns(3)
-                cols[0].caption(f"Source: {f.get('source','---')}")
-                cols[1].caption(f"Tags: {', '.join(f.get('tags',[]))}")
-                cols[2].caption(f"Indexed: {'✅' if f.get('indexed') else '⏳ Pending'}")
+                cols[0].caption(f"📌 Source: {f.get('source','---')}")
+                cols[1].caption(f"🏷️ Tags: {', '.join(f.get('tags',[]))}")
+                cols[2].caption(f"🔗 Indexed: {'✅' if f.get('indexed') else '⏳ Pending'}")
 
-        st.divider()
+        st.markdown("---")
         st.markdown("#### 🤖 Ask AI About Feed Data")
         feed_q = st.text_input("Ask a question about your stored feeds:")
         if feed_q:
             with st.spinner("🔍 Retrieving → 🤖 Generating..."):
                 context, sources = retrieve_context(feed_q, all_docs)
                 answer           = get_llm_answer(feed_q, context)
-            st.success(answer)
+            st.markdown(f'<div class="chat-ai">🤖 {answer}</div>', unsafe_allow_html=True)
             if db is not None:
                 db.chat_history.insert_one({
                     "question": feed_q, "answer": answer,
@@ -548,4 +903,4 @@ with tab5:
                     "timestamp": datetime.datetime.utcnow()
                 })
     else:
-        st.warning("MongoDB not connected")
+        st.warning("⚠️ MongoDB not connected")
