@@ -13,18 +13,12 @@ st.set_page_config(page_title="ESG AI Advisor", page_icon="🌿", layout="wide")
 # ── Custom CSS ────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ── Global ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-}
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-.main {
-    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
-}
+.main { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); }
 
-/* ── Hero Header ── */
 .hero-header {
     background: linear-gradient(135deg, #1a3a6b 0%, #0d47a1 50%, #1565c0 100%);
     padding: 2.5rem 2rem;
@@ -39,10 +33,8 @@ html, body, [class*="css"] {
 .hero-header::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
     background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
     animation: pulse 4s ease-in-out infinite;
 }
@@ -53,45 +45,31 @@ html, body, [class*="css"] {
 }
 
 .hero-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: white;
-    margin: 0;
-    letter-spacing: -0.5px;
+    font-size: 2.5rem; font-weight: 700; color: white;
+    margin: 0; letter-spacing: -0.5px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .hero-subtitle {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.85);
-    margin-top: 0.5rem;
-    font-weight: 400;
-    letter-spacing: 1px;
+    font-size: 1rem; color: rgba(255,255,255,0.85);
+    margin-top: 0.5rem; font-weight: 400; letter-spacing: 1px;
 }
 
 .hero-badges {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 1rem;
-    flex-wrap: wrap;
+    display: flex; justify-content: center;
+    gap: 10px; margin-top: 1rem; flex-wrap: wrap;
 }
 
 .badge {
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.3);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    backdrop-filter: blur(10px);
+    color: white; padding: 4px 12px;
+    border-radius: 20px; font-size: 0.75rem;
+    font-weight: 500; backdrop-filter: blur(10px);
 }
 
-/* ── Metric Cards ── */
 .metric-card {
-    background: white;
-    border-radius: 12px;
+    background: white; border-radius: 12px;
     padding: 1.2rem;
     box-shadow: 0 4px 16px rgba(13, 71, 161, 0.1);
     border-left: 4px solid #0d47a1;
@@ -109,82 +87,50 @@ html, body, [class*="css"] {
 .metric-card.success { border-left-color: #388e3c; }
 
 .metric-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #546e7a;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.75rem; font-weight: 600;
+    color: #546e7a; text-transform: uppercase; letter-spacing: 0.5px;
 }
 
-.metric-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #1a237e;
-    margin: 0.2rem 0;
-}
+.metric-value { font-size: 1.8rem; font-weight: 700; color: #1a237e; margin: 0.2rem 0; }
+.metric-delta { font-size: 0.8rem; font-weight: 500; color: #d32f2f; }
 
-.metric-delta {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #d32f2f;
-}
-
-/* ── Chat Bubbles ── */
 .chat-user {
     background: linear-gradient(135deg, #0d47a1, #1565c0);
-    color: white;
-    padding: 1rem 1.2rem;
+    color: white; padding: 1rem 1.2rem;
     border-radius: 18px 18px 4px 18px;
-    margin: 0.5rem 0;
-    max-width: 80%;
-    margin-left: auto;
+    margin: 0.5rem 0; max-width: 80%; margin-left: auto;
     box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3);
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 0.95rem; line-height: 1.5;
 }
 
 .chat-ai {
-    background: white;
-    color: #1a237e;
+    background: white; color: #1a237e;
     padding: 1rem 1.2rem;
     border-radius: 18px 18px 18px 4px;
-    margin: 0.5rem 0;
-    max-width: 85%;
+    margin: 0.5rem 0; max-width: 85%;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-left: 3px solid #0d47a1;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.95rem; line-height: 1.6;
 }
 
 .pillar-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.5rem;
+    display: inline-block; padding: 3px 10px;
+    border-radius: 12px; font-size: 0.7rem;
+    font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.5rem;
 }
 
 .pillar-E { background: #e8f5e9; color: #2e7d32; }
 .pillar-S { background: #e3f2fd; color: #1565c0; }
 .pillar-G { background: #fff3e0; color: #e65100; }
 
-/* ── Section Headers ── */
 .section-header {
     background: linear-gradient(135deg, #1a3a6b, #0d47a1);
-    color: white;
-    padding: 0.8rem 1.2rem;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    color: white; padding: 0.8rem 1.2rem;
+    border-radius: 10px; font-size: 1.1rem;
+    font-weight: 600; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 8px;
 }
 
-/* ── Suggestion Buttons ── */
 .stButton > button {
     background: white !important;
     color: #0d47a1 !important;
@@ -203,43 +149,18 @@ html, body, [class*="css"] {
     box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3) !important;
 }
 
-/* ── Info Box ── */
 .info-box {
     background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    border: 1px solid #90caf9;
-    border-radius: 10px;
-    padding: 0.8rem 1.2rem;
-    color: #0d47a1;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    border: 1px solid #90caf9; border-radius: 10px;
+    padding: 0.8rem 1.2rem; color: #0d47a1;
+    font-size: 0.9rem; margin-bottom: 1rem;
 }
 
-/* ── Feed Cards ── */
-.feed-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 0.8rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border-left: 4px solid #0d47a1;
-    transition: transform 0.2s ease;
-}
-
-.feed-card:hover {
-    transform: translateX(4px);
-}
-
-/* ── Sidebar ── */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1a3a6b 0%, #0d47a1 100%) !important;
 }
 
-section[data-testid="stSidebar"] * {
-    color: white !important;
-}
+section[data-testid="stSidebar"] * { color: white !important; }
 
 section[data-testid="stSidebar"] .stMetric {
     background: rgba(255,255,255,0.1) !important;
@@ -248,19 +169,14 @@ section[data-testid="stSidebar"] .stMetric {
     margin-bottom: 0.5rem !important;
 }
 
-/* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: white;
-    border-radius: 10px;
-    padding: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    gap: 4px;
+    background: white; border-radius: 10px;
+    padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); gap: 4px;
 }
 
 .stTabs [data-baseweb="tab"] {
     border-radius: 8px !important;
-    font-weight: 500 !important;
-    color: #546e7a !important;
+    font-weight: 500 !important; color: #546e7a !important;
 }
 
 .stTabs [aria-selected="true"] {
@@ -268,7 +184,6 @@ section[data-testid="stSidebar"] .stMetric {
     color: white !important;
 }
 
-/* ── Loading Animation ── */
 @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
@@ -279,11 +194,9 @@ section[data-testid="stSidebar"] .stMetric {
     background: linear-gradient(90deg, #0d47a1 25%, #42a5f5 50%, #0d47a1 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: 2px;
-    margin-bottom: 1rem;
+    border-radius: 2px; margin-bottom: 1rem;
 }
 
-/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; }
 ::-webkit-scrollbar-thumb { background: #0d47a1; border-radius: 3px; }
@@ -549,13 +462,8 @@ st.markdown("""
 
 all_docs = build_knowledge_base()
 
-# ── Tabs ──────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "💬 AI Chat",
-    "📈 Forecast",
-    "📊 Dashboard",
-    "📝 Feedback",
-    "📡 Live Feed"
+    "💬 AI Chat", "📈 Forecast", "📊 Dashboard", "📝 Feedback", "📡 Live Feed"
 ])
 
 # ── TAB 1: AI CHAT ────────────────────────────────────────────
@@ -578,7 +486,6 @@ with tab1:
             if st.button(s, key=f"q{i}", use_container_width=True):
                 st.session_state.chat.append({"role": "user", "content": s})
                 with st.spinner("🔍 Retrieving ESG knowledge → 🤖 Generating answer..."):
-                    st.markdown('<div class="loading-bar"></div>', unsafe_allow_html=True)
                     context, sources = retrieve_context(s, all_docs)
                     answer           = get_llm_answer(s, context)
                 pillar = detect_pillar(s)
@@ -596,7 +503,6 @@ with tab1:
 
     st.markdown("---")
 
-    # Chat messages
     for msg in st.session_state.chat:
         if msg["role"] == "user":
             st.markdown(f'<div class="chat-user">👤 {msg["content"]}</div>', unsafe_allow_html=True)
@@ -688,10 +594,8 @@ with tab2:
                 ))
                 fig.update_layout(
                     title=dict(text=chosen, font=dict(size=14, color="#1a237e")),
-                    xaxis_title="Year", yaxis_title="Value",
-                    height=420,
-                    plot_bgcolor="white",
-                    paper_bgcolor="white",
+                    xaxis_title="Year", yaxis_title="Value", height=420,
+                    plot_bgcolor="white", paper_bgcolor="white",
                     font=dict(family="Inter"),
                     legend=dict(bgcolor="rgba(255,255,255,0.8)", bordercolor="#e0e0e0", borderwidth=1)
                 )
@@ -714,7 +618,6 @@ with tab2:
 with tab3:
     st.markdown('<div class="section-header">📊 ESG Crisis Dashboard — India Auto Manufacturing</div>', unsafe_allow_html=True)
 
-    # Metric Cards
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown("""<div class="metric-card danger">
@@ -755,10 +658,8 @@ with tab3:
         fig = px.bar(df_crisis, x="Indicator", y=["Current", "Target"],
                      barmode="group", title="Current vs Target ESG Values",
                      color_discrete_map={"Current": "#d32f2f", "Target": "#388e3c"})
-        fig.update_layout(
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter"), height=380
-        )
+        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                          font=dict(family="Inter"), height=380)
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
@@ -773,10 +674,8 @@ with tab3:
                           color="Impact Score", color_continuous_scale="Blues",
                           size="Impact Score", size_max=30)
         fig2.update_traces(textposition="top center")
-        fig2.update_layout(
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter"), height=380
-        )
+        fig2.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                           font=dict(family="Inter"), height=380)
         st.plotly_chart(fig2, use_container_width=True)
 
     db = get_db()
@@ -831,8 +730,8 @@ with tab4:
         fb_df   = pd.DataFrame(fb_list)
         if "accuracy" in fb_df.columns:
             c1, c2, c3 = st.columns(3)
-            c1.metric("⭐ Avg Accuracy",   f"{fb_df['accuracy'].mean():.1f}/5")
-            c2.metric("💡 Avg Usefulness", f"{fb_df['usefulness'].mean():.1f}/5")
+            c1.metric("⭐ Avg Accuracy",    f"{fb_df['accuracy'].mean():.1f}/5")
+            c2.metric("💡 Avg Usefulness",  f"{fb_df['usefulness'].mean():.1f}/5")
             c3.metric("📝 Total Feedbacks", len(fb_df))
 
 # ── TAB 5: LIVE FEED ──────────────────────────────────────────
@@ -840,67 +739,46 @@ with tab5:
     st.markdown('<div class="section-header">📡 Live ESG Feed Data</div>', unsafe_allow_html=True)
     st.markdown('<div class="info-box">📥 Save news, alerts, sensor data, policy updates → stored in MongoDB → queryable by AI</div>', unsafe_allow_html=True)
 
-    col_a, col_b = st.columns([2, 1])
+    st.markdown("#### ➕ Add New Feed")
+    col_a, col_b = st.columns(2)
     with col_a:
-        st.markdown("#### ➕ Add New Feed")
         feed_type    = st.selectbox("Feed Type:", ["news","alert","policy","sensor","report","user_input"])
         feed_title   = st.text_input("Title:")
-        feed_content = st.text_area("Content:", height=100)
         feed_source  = st.text_input("Source:", value="manual")
+    with col_b:
+        feed_content = st.text_area("Content:", height=120)
         feed_tags    = st.text_input("Tags (comma-separated):", placeholder="CO2, alert, social")
 
-        if st.button("💾 Save Feed to MongoDB", type="primary"):
-            if feed_title and feed_content:
-                tags = [t.strip() for t in feed_tags.split(",") if t.strip()]
-                db   = get_db()
-                if db is not None:
-                    db.esg_feeds.insert_one({
-                        "feed_type": feed_type, "title": feed_title,
-                        "content": feed_content, "source": feed_source,
-                        "tags": tags, "timestamp": datetime.datetime.utcnow(),
-                        "indexed": False
-                    })
-                    st.success("✅ Feed saved to MongoDB!")
-                else:
-                    st.error("❌ MongoDB not connected")
+    if st.button("💾 Save Feed to MongoDB", type="primary"):
+        if feed_title and feed_content:
+            tags = [t.strip() for t in feed_tags.split(",") if t.strip()]
+            db   = get_db()
+            if db is not None:
+                db.esg_feeds.insert_one({
+                    "feed_type": feed_type, "title": feed_title,
+                    "content": feed_content, "source": feed_source,
+                    "tags": tags, "timestamp": datetime.datetime.utcnow(),
+                    "indexed": False
+                })
+                st.success("✅ Feed saved to MongoDB!")
             else:
-                st.warning("⚠️ Please fill Title and Content")
-
-    with col_b:
-        st.markdown("#### 🔍 Filter Feeds")
-        filter_type  = st.selectbox("Type:", ["all","news","alert","policy","sensor","report","user_input"])
-        filter_limit = st.slider("Show last N:", 5, 50, 10)
+                st.error("❌ MongoDB not connected")
+        else:
+            st.warning("⚠️ Please fill Title and Content")
 
     st.markdown("---")
-    st.markdown("#### 📋 Stored Feeds")
-    db = get_db()
-    if db is not None:
-        query = {} if filter_type == "all" else {"feed_type": filter_type}
-        feeds = list(db.esg_feeds.find(query).sort("timestamp", -1).limit(filter_limit))
-        ICONS = {"news":"🔵","alert":"🔴","policy":"🟢","sensor":"🟠","report":"🟣","user_input":"🟡"}
-        for f in feeds:
-            icon = ICONS.get(f["feed_type"], "⚪")
-            with st.expander(f"{icon} [{f['feed_type'].upper()}] {f['title']} — {f['timestamp'].strftime('%Y-%m-%d %H:%M')}"):
-                st.write(f["content"])
-                cols = st.columns(3)
-                cols[0].caption(f"📌 Source: {f.get('source','---')}")
-                cols[1].caption(f"🏷️ Tags: {', '.join(f.get('tags',[]))}")
-                cols[2].caption(f"🔗 Indexed: {'✅' if f.get('indexed') else '⏳ Pending'}")
-
-        st.markdown("---")
-        st.markdown("#### 🤖 Ask AI About Feed Data")
-        feed_q = st.text_input("Ask a question about your stored feeds:")
-        if feed_q:
-            with st.spinner("🔍 Retrieving → 🤖 Generating..."):
-                context, sources = retrieve_context(feed_q, all_docs)
-                answer           = get_llm_answer(feed_q, context)
-            st.markdown(f'<div class="chat-ai">🤖 {answer}</div>', unsafe_allow_html=True)
-            if db is not None:
-                db.chat_history.insert_one({
-                    "question": feed_q, "answer": answer,
-                    "pillar": detect_pillar(feed_q),
-                    "source": "feed_tab",
-                    "timestamp": datetime.datetime.utcnow()
-                })
-    else:
-        st.warning("⚠️ MongoDB not connected")
+    st.markdown("#### 🤖 Ask AI About Feed Data")
+    feed_q = st.text_input("Ask a question about your stored feeds:")
+    if feed_q:
+        with st.spinner("🔍 Retrieving → 🤖 Generating..."):
+            context, sources = retrieve_context(feed_q, all_docs)
+            answer           = get_llm_answer(feed_q, context)
+        st.markdown(f'<div class="chat-ai">🤖 {answer}</div>', unsafe_allow_html=True)
+        db = get_db()
+        if db is not None:
+            db.chat_history.insert_one({
+                "question": feed_q, "answer": answer,
+                "pillar": detect_pillar(feed_q),
+                "source": "feed_tab",
+                "timestamp": datetime.datetime.utcnow()
+            })
