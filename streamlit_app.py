@@ -354,36 +354,82 @@ def retrieve_context(question, docs, top_k=4):
     sources  = [d["source"] for d in top_docs]
     return context, sources
 
+# ── Greeting / Small-talk Detection ──────────────────────────
+GREETINGS = [
+    "hi","hello","hey","hii","helo","howdy","sup","what's up","whats up",
+    "good morning","good afternoon","good evening","good night",
+    "how are you","how r u","how are u","how do you do","nice to meet you",
+    "who are you","what are you","what can you do","help me","help",
+    "thanks","thank you","thank u","ok","okay","great","awesome","cool",
+    "bye","goodbye","see you","see ya","later"
+]
+
+def is_greeting(text: str) -> bool:
+    t = text.strip().lower().rstrip("!?.")
+    # exact match
+    if t in GREETINGS:
+        return True
+    # short message (≤ 4 words) that starts with a greeting word
+    words = t.split()
+    if len(words) <= 4 and words[0] in GREETINGS:
+        return True
+    return False
+
+def get_greeting_reply(text: str) -> str:
+    t = text.strip().lower().rstrip("!?.")
+    if any(w in t for w in ["bye","goodbye","see you","see ya","later"]):
+        return "Goodbye! 👋 Feel free to come back anytime with your ESG questions."
+    if any(w in t for w in ["thanks","thank you","thank u"]):
+        return "You're welcome! 😊 Let me know if you have more ESG questions."
+    if any(w in t for w in ["who are you","what are you","what can you do"]):
+        return ("I'm your ESG AI Advisor 🌿 — I can help you with:\n"
+                "• 🌍 Environment: CO2, solar, water, air quality\n"
+                "• 👥 Social: worker health, welfare, gender inclusion\n"
+                "• ⚖️ Governance: CBAM, FAME III, ESG ratings, compliance\n\n"
+                "Go ahead, ask me anything!")
+    if any(w in t for w in ["how are you","how r u","how are u","how do you do"]):
+        return "I'm doing great, thanks for asking! 😊 How can I help you with ESG today?"
+    # default greeting
+    return ("Hello! 👋 I'm your ESG AI Advisor for Indian Auto Manufacturing.\n"
+            "How can I help you today? You can ask me about:\n"
+            "• CO2 & energy • Worker health • CBAM & policies")
+
 # ── Groq LLM ─────────────────────────────────────────────────
 def get_llm_answer(question, context):
+    # Handle greetings & small talk without hitting RAG/LLM
+    if is_greeting(question):
+        return get_greeting_reply(question)
+
     try:
         client = Groq(api_key=GROQ_API_KEY)
-        prompt = f"""You are an expert ESG sustainability advisor for an auto manufacturing company in India.
+        prompt = f"""You are a friendly ESG advisor for an Indian auto manufacturing company.
 
-The company faces this interconnected crisis:
-- 75% electricity from coal → CO2 rising (1.82 t/cap) → PM2.5 at 90.87 ug/m3 (18x WHO limit)
-- Water scarcity → Worker health crisis (life expectancy 69.42 years)
-- CBAM carbon tax on EU exports starts 2026
+CRISIS CONTEXT:
+- Coal 75% → CO2 1.82 t/cap → PM2.5 90.87 µg/m³ (18× WHO limit)
+- Water scarcity → life expectancy 69.42 yrs
+- CBAM carbon tax on EU exports from 2026
 
-Answer questions about ALL THREE ESG pillars:
-- ENVIRONMENT: CO2, energy, water, air quality, solar, ZLD
-- SOCIAL: worker health, PM2.5 safety, welfare programs, community, gender inclusion
-- GOVERNANCE: policy, CBAM, FAME III, CCTS, ESG rating, compliance
-
-Use the retrieved context below to give specific, actionable advice with numbers.
+STRICT REPLY RULES:
+1. Be conversational and friendly — like a knowledgeable colleague, not a report.
+2. Keep answers SHORT: 3–5 bullet points max, each under 15 words.
+3. Use bullet points (•) not paragraphs.
+4. Lead with the most important point first.
+5. Add 1 key number or cost if relevant.
+6. End with ONE short follow-up offer like "Want details on any of these?"
+7. Never write long paragraphs. Never repeat the question.
 
 Retrieved Context:
 {context}
 
 Question: {question}
 
-Detailed Answer:"""
+Short Answer:"""
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=500,
-            temperature=0.3
+            max_tokens=250,
+            temperature=0.4
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -485,9 +531,13 @@ with tab1:
         with cols[i % 3]:
             if st.button(s, key=f"q{i}", use_container_width=True):
                 st.session_state.chat.append({"role": "user", "content": s})
-                with st.spinner("🔍 Retrieving ESG knowledge → 🤖 Generating answer..."):
-                    context, sources = retrieve_context(s, all_docs)
-                    answer           = get_llm_answer(s, context)
+                if is_greeting(s):
+                    answer  = get_greeting_reply(s)
+                    sources = []
+                else:
+                    with st.spinner("🔍 Retrieving ESG knowledge → 🤖 Generating answer..."):
+                        context, sources = retrieve_context(s, all_docs)
+                        answer           = get_llm_answer(s, context)
                 pillar = detect_pillar(s)
                 st.session_state.chat.append({
                     "role": "ai", "content": answer,
@@ -520,12 +570,16 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-    user_q = st.chat_input("Ask anything about ESG — environment, social, or governance...")
+    user_q = st.chat_input("Say hi, or ask anything about ESG — environment, social, or governance...")
     if user_q:
         st.session_state.chat.append({"role": "user", "content": user_q})
-        with st.spinner("🔍 Retrieving → 🤖 Generating..."):
-            context, sources = retrieve_context(user_q, all_docs)
-            answer           = get_llm_answer(user_q, context)
+        if is_greeting(user_q):
+            answer  = get_greeting_reply(user_q)
+            sources = []
+        else:
+            with st.spinner("🔍 Retrieving → 🤖 Generating..."):
+                context, sources = retrieve_context(user_q, all_docs)
+                answer           = get_llm_answer(user_q, context)
         pillar = detect_pillar(user_q)
         st.session_state.chat.append({
             "role": "ai", "content": answer,
@@ -770,9 +824,12 @@ with tab5:
     st.markdown("#### 🤖 Ask AI About Feed Data")
     feed_q = st.text_input("Ask a question about your stored feeds:")
     if feed_q:
-        with st.spinner("🔍 Retrieving → 🤖 Generating..."):
-            context, sources = retrieve_context(feed_q, all_docs)
-            answer           = get_llm_answer(feed_q, context)
+        if is_greeting(feed_q):
+            answer = get_greeting_reply(feed_q)
+        else:
+            with st.spinner("🔍 Retrieving → 🤖 Generating..."):
+                context, sources = retrieve_context(feed_q, all_docs)
+                answer           = get_llm_answer(feed_q, context)
         st.markdown(f'<div class="chat-ai">🤖 {answer}</div>', unsafe_allow_html=True)
         db = get_db()
         if db is not None:
