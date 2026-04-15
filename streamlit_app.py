@@ -340,14 +340,82 @@ CSR mandate: Companies with net profit > Rs 5 crore must spend 2% on CSR.""",
 
     return docs + sdg_docs
 
-# ── RAG Retrieval ─────────────────────────────────────────────
+# ── Topic Synonym Map ─────────────────────────────────────────
+# Maps user words → canonical terms that appear in knowledge base docs
+SYNONYM_MAP = {
+    # Worker / Social synonyms
+    "employee":     ["worker","workers","welfare","health","labor","labour","social"],
+    "employees":    ["worker","workers","welfare","health","labor","labour","social"],
+    "staff":        ["worker","workers","welfare","labor","labour"],
+    "workers":      ["worker","welfare","health","labor","labour","social"],
+    "welfare":      ["worker","welfare","health","ESI","reskill","medical","HEPA","safety"],
+    "growth":       ["reskill","training","productivity","PMKVY","skill","development"],
+    "reskilling":   ["reskill","PMKVY","EV","battery","training","skill"],
+    "health":       ["PM2.5","HEPA","ESI","medical","lung","filtration","safety","worker"],
+    "safety":       ["PM2.5","HEPA","ESI","medical","lung","filtration","safety","OSHA"],
+    "gender":       ["female","women","inclusion","labor","participation","hiring"],
+    "inclusion":    ["female","women","gender","diversity","hiring","labor"],
+    "community":    ["local","village","school","CSR","camp","ZLD","hiring","community"],
+    "mental":       ["iCall","Vandrevala","mental","health","support"],
+    # ESG rating synonyms
+    "rating":       ["ESG","rating","score","transparency","reporting","compliance","CBAM","SBTi"],
+    "sustainable":  ["ESG","sustainability","SDG","renewable","net","zero","SBTi","carbon"],
+    "sustainability":["ESG","SDG","renewable","net","zero","SBTi","carbon","rating"],
+    "achieve":      ["target","reduce","improve","implement","action","plan"],
+    "increase":     ["improve","boost","raise","enhance","increase","target"],
+    "improve":      ["reduce","implement","action","target","improve","boost"],
+    # Environment synonyms
+    "air":          ["PM2.5","CO2","emissions","pollution","HEPA","filtration","air"],
+    "pollution":    ["PM2.5","CO2","emissions","HEPA","filtration"],
+    "energy":       ["solar","coal","renewable","electricity","rooftop","FAME","PLI"],
+    "solar":        ["solar","rooftop","renewable","electricity","net","metering"],
+    "water":        ["ZLD","water","recycling","freshwater","scarcity","ZLD"],
+    "emissions":    ["CO2","carbon","CBAM","SBTi","net","zero","emissions"],
+    # Governance synonyms
+    "policy":       ["CBAM","FAME","PLI","CCTS","Labour","Code","policy","compliance"],
+    "compliance":   ["CBAM","OSHA","ESI","Labour","Code","compliance","reporting"],
+    "tax":          ["CBAM","carbon","tax","EU","export","2026"],
+    "certification":["ISO","SBTi","ESG","rating","reporting","compliance"],
+}
+
+def expand_query(question: str) -> set:
+    """Expand user query words using synonym map for better retrieval."""
+    words = question.lower().split()
+    expanded = set(words)
+    for w in words:
+        clean = w.strip("?,!.")
+        if clean in SYNONYM_MAP:
+            expanded.update(SYNONYM_MAP[clean])
+    return expanded
+
+# ── RAG Retrieval (TF-IDF style with synonym expansion) ───────
 def retrieve_context(question, docs, top_k=4):
-    q_words = set(question.lower().split())
-    scores  = []
+    q_words  = expand_query(question)
+    # Build IDF-like weights: rare words across docs get higher weight
+    from collections import Counter
+    doc_freq = Counter()
     for doc in docs:
         doc_words = set(doc["text"].lower().split())
-        score     = len(q_words & doc_words)
+        for w in q_words:
+            if w in doc_words:
+                doc_freq[w] += 1
+    total_docs = len(docs)
+
+    scores = []
+    for doc in docs:
+        doc_words = set(doc["text"].lower().split())
+        score = 0.0
+        for w in q_words:
+            if w in doc_words:
+                # IDF: words rare across docs are more discriminative
+                idf = np.log((total_docs + 1) / (doc_freq[w] + 1)) + 1
+                score += idf
+        # Boost docs whose indicator tag matches key topic words
+        ind = doc.get("indicator","").lower()
+        if any(w in ind for w in q_words):
+            score *= 1.5
         scores.append((score, doc))
+
     scores.sort(key=lambda x: x[0], reverse=True)
     top_docs = [d for _, d in scores[:top_k]]
     context  = "\n\n".join([d["text"] for d in top_docs])
@@ -410,20 +478,22 @@ CRISIS CONTEXT:
 - CBAM carbon tax on EU exports from 2026
 
 STRICT REPLY RULES:
-1. Be conversational and friendly — like a knowledgeable colleague, not a report.
-2. Keep answers SHORT: 3–5 bullet points max, each under 15 words.
-3. Use bullet points (•) not paragraphs.
-4. Lead with the most important point first.
-5. Add 1 key number or cost if relevant.
-6. End with ONE short follow-up offer like "Want details on any of these?"
-7. Never write long paragraphs. Never repeat the question.
+1. READ the question carefully. Answer ONLY what was asked — do NOT switch topics.
+2. If the user shares a suggestion or idea → VALIDATE it first (correct ✅ or needs improvement ⚠️), then add 2–3 focused points.
+3. Keep answers SHORT: 3–5 bullet points, each under 15 words.
+4. Use bullet points (•) not paragraphs.
+5. Lead with the most relevant point to their actual question.
+6. Add 1 key number or cost only if directly relevant.
+7. End with ONE short follow-up offer like "Want details on any of these?"
+8. NEVER write generic ESG bullets unrelated to what the user asked.
+9. Never repeat the question.
 
-Retrieved Context:
+Retrieved Context (use only what's relevant to the question):
 {context}
 
-Question: {question}
+User's Question: {question}
 
-Short Answer:"""
+Focused Answer:"""
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
